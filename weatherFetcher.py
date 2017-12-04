@@ -2,8 +2,27 @@ import requests,json,math
 import xml.etree.ElementTree as ET
 
 
-def waypoints(lat1,lon1,lat2,lon2):
-    return 0
+def waypoints(lat1, lon1, lat2, lon2, N):
+    lats = []
+    lons = []
+
+    lats.append(lat1)
+    lons.append(lon1)
+
+    fraction = 1.0 / float(N)
+    f = fraction
+    while (f < 1.0 - fraction):
+        result = intermediatePoint(lat1, lon1, lat2, lon2, f)
+        lats.append(result['lat'])
+        lons.append(result['lon'])
+        f = f + fraction
+
+    lats.append(lat2)
+    lons.append(lon2)
+
+    return {"lats":lats,"lons":lons}
+
+
 
 def greatCircleDist(lat1,lon1,lat2,lon2):
     R = 6371000.0
@@ -17,17 +36,43 @@ def greatCircleDist(lat1,lon1,lat2,lon2):
     return d / 1000.0
 
 
+def intermediatePoint(lat1, lon1, lat2, lon2, fraction):
+    R = 6371.0
+    d = greatCircleDist(lat1, lon1, lat2, lon2)
+    delta = d / R
+    a = math.sin((1 - fraction)*delta) / math.sin(delta)
+    b = math.sin(fraction * delta) / math.sin(delta)
+    phi1 = lat1 * 0.0174533
+    phi2 = lat2 * 0.0174533
+    lambda1 = lon1 * 0.0174533
+    lambda2 = lon2 * 0.0174533
+    x = a * math.cos(phi1)*math.cos(lambda1) + b*math.cos(phi2)*math.cos(lambda2)
+    y = a * math.cos(phi1) * math.sin(lambda1) + b * math.cos(phi2)*math.sin(lambda2)
+    z = a * math.sin(phi1) + b * math.sin(phi2)
+    phi_i = math.atan2(z, math.sqrt(x*x + y*y))
+    lambda_i = math.atan2(y, x)
+    return {"lat":phi_i * 57.2958, "lon":lambda_i * 57.2958}
+
+
+
 def getKeys():
     return json.load(open('/home/eli/PycharmProjects/design/API_keys.json'))['keys']
+
 
 keys = getKeys()
 weatherKey = keys['weather']
 print weatherKey
 print greatCircleDist(42.836329, -70.973406,52.642808, -9.469758)
+print intermediatePoint(42.836329, -70.973406,52.642808, -9.469758,0.50)
+wypts = waypoints(42.836329, -70.973406,52.642808, -9.469758, 10.0)
 
-exampleURL = "http://api.worldweatheronline.com/premium/v1/marine.ashx?key=" + weatherKey +"&format=json&q=45,-57"
-##response = requests.post(exampleURL)
-##print response.text
+numPts = len(wypts['lats'])
+for i in range(0,numPts):
+    lat = wypts['lats'][i]
+    lon = wypts['lons'][i]
+    URL = "http://api.worldweatheronline.com/premium/v1/marine.ashx?key=" + weatherKey + "&format=json&q=" + str(lat) + "," + str(lon)
+    response = requests.post(URL)
+    print response.text
 ##oot = ET.fromstring(response.text)
 ##print ET.tostring(root)
 
