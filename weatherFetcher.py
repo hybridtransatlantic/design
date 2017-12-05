@@ -62,7 +62,7 @@ def getKeys():
 keys = getKeys()
 weatherKey = keys['weather']
 wypts = waypoints(42.836329, -70.973406,52.642808, -9.469758, 100.0)
-file = open('weatherData', 'w')
+file = open('weatherData', 'a')
 
 
 numPts = len(wypts['lats'])
