@@ -54,23 +54,32 @@ def intermediatePoint(lat1, lon1, lat2, lon2, fraction):
     return {"lat":phi_i * 57.2958, "lon":lambda_i * 57.2958}
 
 
+def weatherCall(lon, lat, weatherKey):
+    URL = "http://api.worldweatheronline.com/premium/v1/marine.ashx?key=" + weatherKey + "&format=json&q=" + str(
+        lat) + "," + str(lon)
+    response = requests.post(URL)
+    return response.text
+
 
 def getKeys():
     return json.load(open('/home/eli/PycharmProjects/design/API_keys.json'))['keys']
 
 
+def fetchGtsreatCircleWeather(wypts, weatherKey):
+    file = open('weatherData', 'a')
+    numPts = len(wypts['lats'])
+    for i in range(0,numPts):
+        lat = wypts['lats'][i]
+        lon = wypts['lons'][i]
+        URL = "http://api.worldweatheronline.com/premium/v1/marine.ashx?key=" + weatherKey + "&format=json&q=" + str(lat) + "," + str(lon)
+        response = requests.post(URL)
+        file.write(response.text)
+
+    file.close()
+
 keys = getKeys()
 weatherKey = keys['weather']
 wypts = waypoints(42.836329, -70.973406,52.642808, -9.469758, 100.0)
-file = open('weatherData', 'a')
+print weatherCall(-40.5, 47, weatherKey)
 
 
-numPts = len(wypts['lats'])
-for i in range(0,numPts):
-    lat = wypts['lats'][i]
-    lon = wypts['lons'][i]
-    URL = "http://api.worldweatheronline.com/premium/v1/marine.ashx?key=" + weatherKey + "&format=json&q=" + str(lat) + "," + str(lon)
-    response = requests.post(URL)
-    file.write(response.text)
-
-file.close()
