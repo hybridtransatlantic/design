@@ -95,6 +95,17 @@ def fetchGreatCircleWeatherToDict(wypts, weatherKey):
     return output
 
 
+def bearing(lat1, lon1, lat2, lon2):
+    phi1 = lat1 * 0.0174533
+    phi2 = lat2 * 0.0174533
+    lambda1 = lon1 * 0.0174533
+    lambda2 = lon2 * 0.0174533
+    y = math.sin(lambda2 - lambda1) * math.cos(phi2)
+    x = math.cos(phi1) * math.sin(phi2) - math.sin(phi1)*math.cos(phi2)*math.cos(lambda2-lambda1)
+    bearing = math.atan2(y,x) * 57.2958
+    return bearing
+
+
 def textToDict(text):
     data = dict(bf.data(fromstring(text)))
     nestedData = data['data']['weather'][0]
@@ -112,7 +123,7 @@ weatherKey = keys['weather']
 wypts = waypoints(42.836329, -70.973406, 52.642808, -9.469758, 100.0)
 result = fetchGreatCircleWeatherToDict(wypts, weatherKey)
 jsonOut = json.dumps(result)
-f = open('test.json','w')
+f = open('2017-12-16.json', 'w')
 f.write(jsonOut)
 f.close()
 
