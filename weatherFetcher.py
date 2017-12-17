@@ -1,7 +1,12 @@
 import requests,json,math
 from xmljson import badgerfish as bf
 from xml.etree.ElementTree import fromstring
+from datetime import date
 
+
+def today():
+    now = date.today()
+    return str(now.year) + '-' + str(now.month) + '-' + str(now.day)
 
 
 def waypoints(lat1, lon1, lat2, lon2, N):
@@ -23,7 +28,6 @@ def waypoints(lat1, lon1, lat2, lon2, N):
     lons.append(lon2)
 
     return {"lats":lats,"lons":lons}
-
 
 
 def greatCircleDist(lat1,lon1,lat2,lon2):
@@ -113,21 +117,45 @@ def textToDict(text):
     date = nestedData['date']['$']
     tmp = {}
     for i in nestedData['hourly']:
-        tmp[str(i['time']['$']).zfill(4)] = {'WindGustKmph':i['WindGustKmph']['$'],'pressure':i['pressure']['$'],'winddirDegree':i['winddirDegree']['$'],'windspeedKmph':i['windspeedKmph']['$']}
+        tmp[str(i['time']['$']).zfill(4)] = {'WindGustKmph':i['WindGustKmph']['$'], 'pressure':i['pressure']['$'], 'winddirDegree':i['winddirDegree']['$'], 'windspeedKmph':i['windspeedKmph']['$']}
     output[date] = tmp
     return output
 
 
-keys = getKeys()
-weatherKey = keys['weather']
-wypts = waypoints(42.836329, -70.973406, 52.642808, -9.469758, 100.0)
-result = fetchGreatCircleWeatherToDict(wypts, weatherKey)
-jsonOut = json.dumps(result)
-f = open('2017-12-16.json', 'w')
-f.write(jsonOut)
-f.close()
+def getTodaysWeather():
+    keys = getKeys()
+    weatherKey = keys['weather']
+    wypts = waypoints(42.836329, -70.973406, 52.642808, -9.469758, 100.0)
+    result = fetchGreatCircleWeatherToDict(wypts, weatherKey)
+    jsonOut = json.dumps(result)
+    f = open(today(), 'w')
+    f.write(jsonOut)
+    f.close()
 
-print result
+def weatherToWindComponents(weatherDataFile):
+    dict = json.load(open(weatherDataFile))
+    date = weatherDataFile.split('.')[0]
+    for i in dict:
+        lat = i.split(',')[0]
+        lon = i.split(',')[1]
+        brng = bearing(float(lat),float(lon),52.642808, -9.469758)
+        for j in dict[i][date]:
+            dir = (float(dict[i][date][j]['winddirDegree']) + 180) % 360
+            spd = float(dict[i][date][j]['windspeedKmph']) * 0.277777777
+            theta = brng - dir
+            tailwind = spd * math.cos(theta * 0.0174533)
+            crosswind = math.sqrt((spd * spd) - (tailwind * tailwind))
+            print 'at time = ' + str(j)
+            print 'wind speed = ' + str(spd) + ', at ' + str(dir) + ' (flippd by 180)'
+            print 'bearing = ' + str(brng)
+            print 'tailwind = ' + str(tailwind) + ', crosswind = ' + str(crosswind)
+            print '--------------------------'
+
+
+weatherToWindComponents('2017-12-17.json')
+
+
+#print result
 #response = weatherCall(-40.5, 47, weatherKey)
 #print textToDict(response)
 
