@@ -1,7 +1,8 @@
-import requests,json,math
+import requests, json, math
 from xmljson import badgerfish as bf
 from xml.etree.ElementTree import fromstring
 from datetime import date
+from missionSimulation import calcReqdYaw
 
 
 def today():
@@ -128,9 +129,11 @@ def getTodaysWeather():
     wypts = waypoints(42.836329, -70.973406, 52.642808, -9.469758, 100.0)
     result = fetchGreatCircleWeatherToDict(wypts, weatherKey)
     jsonOut = json.dumps(result)
-    f = open(today(), 'w')
+    fname = today() + '.json'
+    f = open(fname, 'w')
     f.write(jsonOut)
     f.close()
+
 
 def weatherToWindComponents(weatherDataFile):
     dict = json.load(open(weatherDataFile))
@@ -146,13 +149,19 @@ def weatherToWindComponents(weatherDataFile):
             tailwind = spd * math.cos(theta * 0.0174533)
             crosswind = math.sqrt((spd * spd) - (tailwind * tailwind))
             print 'at time = ' + str(j)
-            print 'wind speed = ' + str(spd) + ', at ' + str(dir) + ' (flippd by 180)'
+            print 'wind speed = ' + str(spd) + ', at ' + str(dir) + ' (flipped by 180)'
             print 'bearing = ' + str(brng)
             print 'tailwind = ' + str(tailwind) + ', crosswind = ' + str(crosswind)
+            Theta = 90.0 - brng % 360.0
+            Psi = 90.0 - dir % 360.0
+            print 'reqd yaw is ' + str(calcReqdYaw(50.0, Theta, spd, Psi))
+
+
             print '--------------------------'
 
 
-weatherToWindComponents('2017-12-17.json')
+weatherToWindComponents('2017-12-18.json')
+#getTodaysWeather()
 
 
 #print result
